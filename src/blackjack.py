@@ -3,8 +3,13 @@ import random
 import copy
 import time
 
+pygame.init()
 # Load Images
 bg_image = pygame.image.load("resources/casino_table_background.jpg")
+score_bg_img = pygame.image.load("resources/casino_table_mini.jpg")
+
+
+screen = pygame.display.set_mode((640, 480))
 
 # icon = pygame.image.load('resources/icon.png')
 
@@ -62,10 +67,15 @@ clubK = pygame.image.load('resources/cards/kc.png')
 heartK = pygame.image.load('resources/cards/kh.png')
 spadeK = pygame.image.load('resources/cards/ks.png')
 
+font = pygame.font.SysFont("arial", 60)
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GRAY = (192, 192, 192)
 DARK_GREEN = (25, 126, 30)
+
+WIDTH = 640
+HEIGHT = 480
 
 # All the cards
 card_deck = [diamondA, clubA, heartA, spadeA,
@@ -191,6 +201,16 @@ def display_user_hand(screen, user_hand):
         screen.blit(card, (x, 330))
 
 
+def display_user_score( user_total_max, user_total_min):
+    # label = font.render(str(user_total_max), 1, WHITE)
+    # screen.blit(label, (WIDTH - 100, HEIGHT - 110))
+
+    score_img = font.render(str(user_total_max), True, BLACK)
+    score_rect = score_img.get_rect(center=(WIDTH - 100, HEIGHT - 110))
+
+    screen.blit(score_img, score_rect)
+
+
 def is_game_over(dealer_hand, dealer_total_max, user_hand, user_total_max, user_total_min):
     if (user_total_min >= 21) or len(user_hand) == 5:
         return True
@@ -215,10 +235,10 @@ def main():
 
     # Initialize Game
     pygame.init()
-    screen = pygame.display.set_mode((640, 480))
     pygame.display.set_caption('Blackjack')
     font = pygame.font.SysFont('arial', 15)
 
+    score_bg = score_bg_img.get_rect(center=(400, HEIGHT - 130))
     # Set background
     screen.blit(bg_image, (0, 0))
 
@@ -241,17 +261,28 @@ def main():
     # Game Loop
     while True:
         game_over = is_game_over(dealer_hand, dealer_total_max, user_hand, user_total_max, user_total_min)
+        display_user_score(user_total_max, user_total_min)
+
+        first_hit = True
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_over = True
                 pygame.quit()
 
+            # player hits
             elif event.type == pygame.MOUSEBUTTONDOWN and not (game_over or stand) and hit_button.collidepoint(
                     pygame.mouse.get_pos()):
                 hit(card_copy, used_cards, user_hand)
                 user_total_max, user_total_min = get_hand_value(user_hand)
+                if first_hit:
+                    screen.blit(bg_image, score_bg)
+
+                display_user_score(user_total_max, user_total_min)
+
+                display_user_score(user_total_max, user_total_min)
                 print('User: %i' % user_total_max)
+
 
             elif event.type == pygame.MOUSEBUTTONDOWN and not game_over and stand_button.collidepoint(
                     pygame.mouse.get_pos()):
@@ -297,6 +328,7 @@ def main():
         display_dealer_hand(dealer_hand, screen)
 
         display_user_hand(screen, user_hand)
+
 
         # when game is over, draws restart button and text, and shows the dealer's second card
         if game_over or stand:
