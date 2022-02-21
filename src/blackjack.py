@@ -2,9 +2,13 @@ import pygame
 import random
 import copy
 import time
-
+# TESTETSTST mona monma omao
+pygame.init()
 # Load Images
 bg_image = pygame.image.load("resources/casino_table_background.jpg")
+score_bg_img = pygame.image.load("resources/casino_table_mini.jpg")
+
+screen = pygame.display.set_mode((640, 480))
 
 # icon = pygame.image.load('resources/icon.png')
 
@@ -62,10 +66,15 @@ clubK = pygame.image.load('resources/cards/kc.png')
 heartK = pygame.image.load('resources/cards/kh.png')
 spadeK = pygame.image.load('resources/cards/ks.png')
 
+font = pygame.font.SysFont("arial", 60)
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GRAY = (192, 192, 192)
 DARK_GREEN = (25, 126, 30)
+
+WIDTH = 640
+HEIGHT = 480
 
 # All the cards
 card_deck = [diamondA, clubA, heartA, spadeA,
@@ -161,6 +170,17 @@ def get_hand_value(hand):
     return hand_max, hand_min
 
 
+def get_face_hand_value(hand):
+    hand_max = 0
+    hand_min = 0
+
+    hand_max += get_card_value(hand[0])
+    hand_min += get_card_value(hand[0])
+    if hand[0] in card_ace:
+        hand_min -= 10
+    return hand_max, hand_min
+
+
 def get_card(card_deck, used_cards):
     # Generates a random card from cardDeck, removes it from card_deck, and appends it to used_cards.
     card = random.choice(card_deck)
@@ -191,6 +211,20 @@ def display_user_hand(screen, user_hand):
         screen.blit(card, (x, 330))
 
 
+def display_score(player, dealer):
+    # label = font.render(str(user_total_max), 1, WHITE)
+    # screen.blit(label, (WIDTH - 100, HEIGHT - 110))
+
+    player_score_img = font.render(str(player), True, BLACK)
+    dealer_score_img = font.render(str(dealer), True, BLACK)
+
+    player_score_rect = player_score_img.get_rect(center=(WIDTH - 100, HEIGHT - 110))
+    dealer_score_rect = dealer_score_img.get_rect(center=(WIDTH - 100, HEIGHT - 410))
+
+    screen.blit(player_score_img, player_score_rect)
+    screen.blit(dealer_score_img, dealer_score_rect)
+
+
 def is_game_over(dealer_hand, dealer_total_max, user_hand, user_total_max, user_total_min):
     if (user_total_min >= 21) or len(user_hand) == 5:
         return True
@@ -215,10 +249,11 @@ def main():
 
     # Initialize Game
     pygame.init()
-    screen = pygame.display.set_mode((640, 480))
     pygame.display.set_caption('Blackjack')
     font = pygame.font.SysFont('arial', 15)
 
+    user_score_bg = score_bg_img.get_rect(center=(400, HEIGHT - 130))
+    dealer_score_bg = score_bg_img.get_rect(center=(500, HEIGHT - 630))
     # Set background
     screen.blit(bg_image, (0, 0))
 
@@ -234,31 +269,48 @@ def main():
 
     user_total_max, user_total_min = get_hand_value(user_hand)
     print('User: %i' % user_total_max)
+
     dealer_total_max, dealer_total_min = get_hand_value(dealer_hand)
+    dealer_face_total_max, dealer_face_total_min = get_face_hand_value(dealer_hand)
 
     game_over = False
 
     # Game Loop
     while True:
         game_over = is_game_over(dealer_hand, dealer_total_max, user_hand, user_total_max, user_total_min)
+        display_score(user_total_max, dealer_face_total_max)
+
+        first_hit = True
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_over = True
                 pygame.quit()
 
+            # player hits
             elif event.type == pygame.MOUSEBUTTONDOWN and not (game_over or stand) and hit_button.collidepoint(
                     pygame.mouse.get_pos()):
                 hit(card_copy, used_cards, user_hand)
                 user_total_max, user_total_min = get_hand_value(user_hand)
+                if first_hit:
+                    screen.blit(bg_image, user_score_bg)
+
+                display_score(user_total_max, dealer_face_total_max)
+
                 print('User: %i' % user_total_max)
+
 
             elif event.type == pygame.MOUSEBUTTONDOWN and not game_over and stand_button.collidepoint(
                     pygame.mouse.get_pos()):
                 # when player stands, the dealer plays
                 time.sleep(0.5)
                 stand = True
+
                 screen.blit(dealer_hand[1], (120, 10))
+
+                screen.blit(bg_image, dealer_score_bg)
+                display_score(user_total_max, dealer_total_max)
+
                 print('Dealer: %i' % dealer_total_max)
                 while dealer_total_max <= user_total_max and dealer_total_max < 17:
                     print('Dealer: %i' % dealer_total_max)
